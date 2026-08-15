@@ -1,15 +1,19 @@
-Absolutely. Here is a **clean, repository-ready `README.md`** that documents the project without overclaiming and keeps the experimental and deployment parts clearly separated.
+Yes. Given the restructuring we just decided on, I would **clean this README before treating it as final**. The main issue is that it still refers to `NN/` as a subdirectory of `classical_ml/`, and some sections duplicate information that belongs in the CNN-specific README.
+
+I would make the **root README** a project-level overview, with `classical_ml/README.md` and `neural_network/README.md` handling implementation details.
+
+### Recommended root `README.md`
 
 ````markdown
 # Intel Image Scene Classification
 
-End-to-end image scene classification project using classical computer vision, classical machine learning, and a PyTorch CNN, followed by REST API serving with FastAPI and containerized deployment using Docker.
+End-to-end image scene classification project comparing classical computer-vision pipelines with a PyTorch convolutional neural network, followed by model interpretability and containerized inference deployment.
 
 ---
 
 ## Project Overview
 
-The project investigates image classification across six scene categories from the Intel Image Classification dataset:
+The project investigates classification across six scene categories from the Intel Image Classification dataset:
 
 - Buildings
 - Forest
@@ -18,60 +22,45 @@ The project investigates image classification across six scene categories from t
 - Sea
 - Street
 
-The project is developed in two stages:
-
-1. **Classical ML pipeline**
-   - HOG
-   - LBP
-   - PCA
-   - Logistic Regression
-   - SVM
-   - Hyperparameter search
-
-2. **Deep learning pipeline**
-   - PyTorch CNN
-   - Controlled augmentation experiment
-   - Grad-CAM visualization
-   - FastAPI inference API
-   - Docker and Docker Compose deployment
-
-The overall workflow is:
+The project follows a progression from handcrafted visual representations to learned image representations and finally to deployable inference.
 
 ```text
-                    Intel Scene Images
-                           │
-             ┌─────────────┴─────────────┐
-             │                           │
-             ▼                           ▼
-      Classical ML                    CNN
-             │                           │
-      HOG / LBP Features          Learned Features
-             │                           │
-            PCA                    Classification
-             │                           │
-       SVM / Logistic             Evaluation
-             │                           │
-             └─────────────┬─────────────┘
-                           ▼
-                    Model Evaluation
-                           │
-                           ▼
-                    FastAPI Inference
-                           │
-                           ▼
-                     Docker Image
-                           │
-                           ▼
-                    Docker Compose
+                         Intel Scene Images
+                                │
+                 ┌──────────────┴──────────────┐
+                 │                             │
+                 ▼                             ▼
+          Classical ML                  Neural Network
+                 │                             │
+          HOG / LBP Features                 CNN
+                 │                             │
+                PCA                    Controlled Augmentation
+                 │                             │
+         SVM / Logistic                 Baseline vs ColorJitter
+                 │                             │
+                 └──────────────┬──────────────┘
+                                │
+                                ▼
+                         Model Evaluation
+                                │
+                                ▼
+                             Grad-CAM
+                                │
+                                ▼
+                         FastAPI Inference
+                                │
+                                ▼
+                             Docker
+                                │
+                                ▼
+                        Docker Compose
 ````
 
 ---
 
 # Dataset
 
-The project uses the Intel Image Classification dataset.
-
-The six target classes are:
+The project uses the Intel Image Classification dataset containing six scene classes:
 
 ```text
 buildings
@@ -82,58 +71,44 @@ sea
 street
 ```
 
-The expected dataset structure is:
-
-```text
-intel-classification/
-├── data/
-│   ├── train/
-│   │   ├── buildings/
-│   │   ├── forest/
-│   │   ├── glacier/
-│   │   ├── mountain/
-│   │   ├── sea/
-│   │   └── street/
-│   │
-│   └── test/
-│       ├── buildings/
-│       ├── forest/
-│       ├── glacier/
-│       ├── mountain/
-│       ├── sea/
-│       └── street/
-│
-└── ...
-```
-
-Additional project data is stored under:
+Expected dataset structure:
 
 ```text
 data/
-├── features/
-├── pred/
-├── raw/
-├── test/
-└── train/
+├── train/
+│   ├── buildings/
+│   ├── forest/
+│   ├── glacier/
+│   ├── mountain/
+│   ├── sea/
+│   └── street/
+│
+└── test/
+    ├── buildings/
+    ├── forest/
+    ├── glacier/
+    ├── mountain/
+    ├── sea/
+    └── street/
 ```
 
 ---
 
 # Classical Machine Learning
 
-The classical pipeline investigates whether manually engineered image representations can provide useful classification performance before moving to learned CNN representations.
+The classical pipeline evaluates whether handcrafted image representations can provide effective scene classification before moving to learned CNN representations.
 
 ## Feature Extraction
 
 ### HOG
 
-Histogram of Oriented Gradients (HOG) captures local edge and gradient information and provides a representation of image structure.
+Histogram of Oriented Gradients (HOG) captures local edge and gradient structure within an image.
 
 ### LBP
 
-Local Binary Patterns (LBP) capture local texture information by comparing neighboring pixel intensities.
+Local Binary Patterns (LBP) capture local texture information based on neighboring pixel intensities.
 
-Both feature representations are evaluated independently and can also be combined.
+The resulting feature representations are evaluated individually and in combination.
 
 ```text
 Image
@@ -157,37 +132,54 @@ The classical experiments include:
 
 * Logistic Regression
 * Support Vector Machine (SVM)
-* PCA
+* Principal Component Analysis (PCA)
 * GridSearchCV for hyperparameter selection
 
-Model performance is evaluated using classification metrics and confusion matrices.
+The best classical configuration achieved approximately **76% test accuracy**, with confusion concentrated among visually similar scene classes such as glacier, mountain, and sea.
+
+Further details are available in:
+
+```text
+classical_ml/README.md
+```
 
 ---
 
-# CNN Experiment
+# Neural Network
 
-A convolutional neural network was implemented using PyTorch.
+A convolutional neural network was implemented using PyTorch to learn image representations directly from raw pixels.
 
-The CNN learns image representations directly from the input pixels rather than relying on manually engineered HOG or LBP features.
+The CNN experiments investigate the effect of controlled image augmentation.
 
-## Controlled Experiment
-
-Two CNN configurations are compared:
+Two configurations were compared:
 
 1. **Baseline CNN**
 2. **ColorJitter CNN**
 
-The experiment keeps the training configuration fixed and changes the augmentation strategy.
+Both models use the same:
 
-Both models use the same stratified 85/15 training-validation split.
+* Stratified 85/15 validation split
+* Random seed
+* Optimizer
+* Learning rate
+* Batch size
+* Training schedule
+* Early stopping configuration
 
-The split indices are stored in:
+The primary experimental difference is the augmentation strategy.
 
-```text
-checkpoints/split_indices.npz
-```
+---
 
-This ensures that both models are evaluated on the same validation samples.
+## CNN Results
+
+| Model           | Test Accuracy |
+| --------------- | ------------: |
+| Baseline CNN    |    **84.17%** |
+| ColorJitter CNN |    **86.47%** |
+
+ColorJitter therefore produced a **2.30 percentage-point improvement** in test accuracy over the controlled baseline.
+
+The improvement was particularly reflected in classes where appearance and illumination can vary substantially.
 
 ---
 
@@ -201,20 +193,6 @@ RandomHorizontalFlip
 ToTensor
 ```
 
-Train using:
-
-```bash
-python train.py --augmentation baseline
-```
-
-Checkpoint:
-
-```text
-checkpoints/baseline_cnn.pth
-```
-
----
-
 ## ColorJitter Augmentation
 
 ```text
@@ -227,18 +205,6 @@ ColorJitter
 ToTensor
 ```
 
-Train using:
-
-```bash
-python train.py --augmentation colorjitter
-```
-
-Checkpoint:
-
-```text
-checkpoints/colorjitter_cnn.pth
-```
-
 ColorJitter parameters:
 
 ```text
@@ -248,11 +214,7 @@ saturation = 0.15
 hue        = 0.05
 ```
 
----
-
-## Training Configuration
-
-Both CNN experiments use the same settings:
+Training configuration:
 
 | Parameter               |      Value |
 | ----------------------- | ---------: |
@@ -266,91 +228,21 @@ Both CNN experiments use the same settings:
 | Validation split        |        15% |
 | Split type              | Stratified |
 
-The augmentation strategy is therefore the primary experimental difference between the two CNN configurations.
-
----
-
-# CNN Reproduction
-
-## Installation
-
-Install the required dependencies:
-
-```bash
-python -m pip install -r requirements.txt
-```
-
-## Train Baseline
-
-```bash
-python train.py --augmentation baseline
-```
-
-## Train ColorJitter Model
-
-```bash
-python train.py --augmentation colorjitter
-```
-
-## Evaluate Baseline
-
-```bash
-python evaluate.py \
-    --checkpoint checkpoints/baseline_cnn.pth
-```
-
-## Evaluate ColorJitter
-
-```bash
-python evaluate.py \
-    --checkpoint checkpoints/colorjitter_cnn.pth
-```
-
 ---
 
 # Grad-CAM
 
-Grad-CAM is used to visualize the spatial regions contributing to CNN predictions.
+Grad-CAM was used to provide qualitative interpretability for CNN predictions.
 
-The final target layer used for Grad-CAM is:
+The final convolutional feature layer used as the Grad-CAM target was:
 
 ```python
 model.features[17]
 ```
 
-This provides a qualitative interpretation of what regions of the input image are influencing the model's prediction.
+The visualizations allow inspection of the spatial regions contributing most strongly to the model's predicted class.
 
----
-
-# Controlled Checkpoints
-
-The final controlled CNN experiment produces:
-
-```text
-checkpoints/
-├── split_indices.npz
-├── baseline_cnn.pth
-└── colorjitter_cnn.pth
-```
-
-### Important
-
-The older Drive checkpoint:
-
-```text
-best_cnn.pth
-```
-
-should **not** be used as the controlled baseline.
-
-The controlled comparison uses:
-
-```text
-baseline_cnn.pth
-colorjitter_cnn.pth
-```
-
-because these checkpoints correspond to the reproducible experimental setup described above.
+This provides an additional evaluation layer beyond aggregate classification metrics by examining whether the CNN is attending to semantically meaningful scene regions.
 
 ---
 
@@ -358,27 +250,26 @@ because these checkpoints correspond to the reproducible experimental setup desc
 
 The trained CNN is exposed through a REST API using FastAPI.
 
-The deployment application is located under:
+The deployment implementation is contained within:
 
 ```text
-NN/deployment/
-├── app/
-│   ├── __init__.py
-│   ├── inference.py
-│   ├── main.py
-│   └── model.py
-│
-├── models/
-├── docker-compose.yml
-├── dockerfile
-└── requirements.txt
+neural_network/
+└── deployment/
+    ├── app/
+    │   ├── __init__.py
+    │   ├── inference.py
+    │   ├── main.py
+    │   └── model.py
+    │
+    ├── models/
+    ├── docker-compose.yml
+    ├── dockerfile
+    └── requirements.txt
 ```
 
-The API provides two primary endpoints.
+The API provides:
 
----
-
-## Health Check
+### Health Check
 
 ```http
 GET /health
@@ -398,9 +289,7 @@ Response:
 }
 ```
 
----
-
-## Prediction
+### Prediction
 
 ```http
 POST /predict
@@ -429,9 +318,9 @@ Example response:
 
 # Interactive API Documentation
 
-FastAPI automatically generates interactive API documentation.
+FastAPI provides automatically generated API documentation.
 
-Once the service is running, open:
+Once the service is running:
 
 ```text
 http://127.0.0.1:8000/docs
@@ -443,31 +332,31 @@ The OpenAPI specification is available at:
 http://127.0.0.1:8000/openapi.json
 ```
 
-The Swagger UI can be used to upload an image and test the `/predict` endpoint directly.
-
 ---
 
 # Docker Deployment
 
-The inference service is packaged as a Docker image.
-
-## Build the Image
+The inference service is packaged into a Docker image containing the application, dependencies, and trained model.
 
 From the deployment directory:
 
 ```bash
-cd NN/deployment
+cd neural_network/deployment
+```
 
+Build the image:
+
+```bash
 docker build -t intel-scene-api .
 ```
 
-## Run the Container
+Run the container:
 
 ```bash
 docker run --rm -p 8000:8000 intel-scene-api
 ```
 
-The API will be available at:
+The API is then available at:
 
 ```text
 http://127.0.0.1:8000
@@ -477,27 +366,27 @@ http://127.0.0.1:8000
 
 # Docker Compose
 
-Docker Compose is provided to simplify container lifecycle management.
+Docker Compose is provided for simplified service management.
 
-## Start the Service
+Start the service:
 
 ```bash
 docker compose up -d --build
 ```
 
-## Check Running Containers
+Check the service:
 
 ```bash
 docker compose ps
 ```
 
-## Test the API
+Test the health endpoint:
 
 ```bash
 curl http://127.0.0.1:8000/health
 ```
 
-## Stop the Service
+Stop the service:
 
 ```bash
 docker compose down
@@ -506,8 +395,8 @@ docker compose down
 The Compose configuration maps:
 
 ```text
-Host port:       8000
-Container port:  8000
+Host:      8000
+Container: 8000
 ```
 
 ---
@@ -515,34 +404,32 @@ Container port:  8000
 # Deployment Architecture
 
 ```text
-                Client
-                  │
-                  │ HTTP
-                  ▼
-        ┌─────────────────────┐
-        │     FastAPI API     │
-        │                     │
-        │ GET  /health        │
-        │ POST /predict       │
-        └──────────┬──────────┘
-                   │
-                   ▼
-        ┌─────────────────────┐
-        │ Image Preprocessing │
-        └──────────┬──────────┘
-                   │
-                   ▼
-        ┌─────────────────────┐
-        │    PyTorch CNN      │
-        │                     │
-        │ ColorJitter CNN     │
-        └──────────┬──────────┘
-                   │
-                   ▼
-          Class + Confidence
+                    Client
+                      │
+                      │ HTTP
+                      ▼
+              ┌───────────────┐
+              │    FastAPI    │
+              │               │
+              │ GET /health   │
+              │ POST /predict │
+              └───────┬───────┘
+                      │
+                      ▼
+             ┌─────────────────┐
+             │ Image Processing│
+             └────────┬────────┘
+                      │
+                      ▼
+             ┌─────────────────┐
+             │    PyTorch CNN  │
+             └────────┬────────┘
+                      │
+                      ▼
+                Class + Score
 ```
 
-The application and model are packaged together inside the Docker image, allowing the inference environment to be reproduced independently of the local Python environment.
+The model and inference application are packaged together inside the Docker image, providing a reproducible inference environment.
 
 ---
 
@@ -552,27 +439,20 @@ The application and model are packaged together inside the Docker image, allowin
 intel-classification/
 │
 ├── data/
-│   ├── features/
-│   ├── pred/
-│   ├── raw/
-│   ├── test/
-│   └── train/
+│   ├── train/
+│   └── test/
 │
 ├── classical_ml/
 │   ├── analysis/
 │   ├── exploration/
 │   ├── features/
-│   └── models/
+│   ├── models/
+│   └── README.md
 │
-├── NN/
+├── neural_network/
 │   ├── checkpoints/
 │   ├── deployment/
 │   │   ├── app/
-│   │   │   ├── __init__.py
-│   │   │   ├── inference.py
-│   │   │   ├── main.py
-│   │   │   └── model.py
-│   │   │
 │   │   ├── models/
 │   │   ├── docker-compose.yml
 │   │   ├── dockerfile
@@ -580,12 +460,13 @@ intel-classification/
 │   │
 │   ├── evaluate.py
 │   ├── model.py
-│   └── train.py
+│   ├── train.py
+│   └── README.md
 │
 ├── configs/
-├── exploration/
+├── logs/
+├── notebooks/
 ├── tests/
-├── requirements.txt
 └── README.md
 ```
 
@@ -593,48 +474,88 @@ intel-classification/
 
 # Technologies
 
-| Area             | Technologies         |
-| ---------------- | -------------------- |
-| Language         | Python               |
-| Computer Vision  | HOG, LBP             |
-| Classical ML     | Scikit-learn         |
-| Deep Learning    | PyTorch, Torchvision |
-| Model Serving    | FastAPI, Uvicorn     |
-| Containerization | Docker               |
-| Orchestration    | Docker Compose       |
-| Development      | VS Code, Jupyter     |
+| Area                   | Technologies         |
+| ---------------------- | -------------------- |
+| Language               | Python               |
+| Computer Vision        | HOG, LBP             |
+| Classical ML           | Scikit-learn         |
+| Deep Learning          | PyTorch, Torchvision |
+| Model Interpretability | Grad-CAM             |
+| Model Serving          | FastAPI, Uvicorn     |
+| Containerization       | Docker               |
+| Container Management   | Docker Compose       |
+| Development            | VS Code, Jupyter     |
 
 ---
 
 # Key Outcomes
 
-The project demonstrates the progression from traditional feature engineering to learned image representations and finally to model deployment:
+The project demonstrates a progression from handcrafted image features to learned representations and production-oriented inference:
 
 ```text
-Handcrafted Features
-       │
-       ▼
- HOG / LBP + PCA
-       │
-       ▼
- Classical ML
-       │
-       ▼
-     CNN
-       │
-       ▼
-   Grad-CAM
-       │
-       ▼
-   FastAPI
-       │
-       ▼
-    Docker
-       │
-       ▼
- Docker Compose
+HOG / LBP
+    │
+    ▼
+PCA + Classical ML
+    │
+    │ ~76% accuracy
+    ▼
+CNN
+    │
+    │ 84.17%
+    ▼
+Controlled ColorJitter Experiment
+    │
+    │ 86.47%
+    ▼
+Grad-CAM Interpretability
+    │
+    ▼
+FastAPI Inference API
+    │
+    ▼
+Docker / Docker Compose
 ```
 
-This provides both an experimental comparison between classical and deep-learning approaches and a reproducible inference pipeline for serving the trained CNN.
+The project therefore combines:
 
+* **Classical computer vision**
+* **Machine learning**
+* **Deep learning**
+* **Controlled experimentation**
+* **Model interpretability**
+* **REST API development**
+* **Containerized deployment**
+
+````
+
+### One thing I would **not** put in the root README
+
+Don't put the entire CNN reproduction procedure, checkpoint caveats, or every training detail here. Put those in:
+
+```text
+neural_network/README.md
+````
+
+Likewise, your HOG/LBP/PCA details belong in:
+
+```text
+classical_ml/README.md
 ```
+
+That gives you a much more professional hierarchy:
+
+```text
+README.md
+│
+├── What is this project?
+├── What was investigated?
+├── Results
+├── Architecture
+└── Where to find each component
+       │
+       ├── classical_ml/README.md
+       └── neural_network/README.md
+```
+
+And importantly, **the 84.17% → 86.47% result and Grad-CAM are now visible immediately**, rather than buried deep inside the implementation documentation.
